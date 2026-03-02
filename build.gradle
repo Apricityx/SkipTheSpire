@@ -1,0 +1,63 @@
+plugins {
+    id 'java'
+}
+
+group = 'skipthespire'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+String steamPathRaw = (String) (findProperty('steam.path') ?: System.getenv('STEAM_PATH'))
+if (steamPathRaw == null || steamPathRaw.trim().isEmpty()) {
+    throw new GradleException('Set STEAM_PATH environment variable or pass -Psteam.path=<steam root or steamapps path>.')
+}
+
+File steamPath = file(steamPathRaw)
+File steamApps = steamPath.name.equalsIgnoreCase('steamapps') ? steamPath : new File(steamPath, 'steamapps')
+
+File stsJar = new File(steamApps, 'common/SlayTheSpire/desktop-1.0.jar')
+if (!stsJar.exists()) {
+    throw new GradleException("desktop-1.0.jar not found: ${stsJar.absolutePath}")
+}
+
+List<File> mtsCandidates = [
+    findProperty('mts.jar') ? file((String) findProperty('mts.jar')) : null,
+    new File(steamApps, 'workshop/content/646570/1605060445/ModTheSpire.jar'),
+    new File(steamApps, 'workshop/content/646570/3658571962/ModTheSpire.jar')
+].findAll { it != null }
+
+File mtsJar = mtsCandidates.find { it.exists() }
+if (mtsJar == null) {
+    throw new GradleException('ModTheSpire.jar not found. Pass -Pmts.jar=<absolute path to ModTheSpire.jar>.')
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly files(stsJar)
+    compileOnly files(mtsJar)
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    if (JavaVersion.current().isJava9Compatible()) {
+        options.release = 8
+    }
+    options.compilerArgs << '-Xlint:-options'
+}
+
+jar {
+    archiveBaseName = 'SkipTheSpire'
+}
+
+tasks.register('printResolvedJars') {
+    doLast {
+        println "[SkipTheSpire] STS jar: ${stsJar.absolutePath}"
+        println "[SkipTheSpire] MTS jar: ${mtsJar.absolutePath}"
+    }
+}

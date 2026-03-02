@@ -1,0 +1,9 @@
+{
+  "modid": "skipthespire",
+  "name": "SkipTheSpire",
+  "author_list": ["apricityx"],
+  "description": "Skip startup splash animation and go directly to the main menu.",
+  "version": "1.0.0",
+  "sts_version": "12-18-2022",
+  "mts_version": "3.30.3"
+}
